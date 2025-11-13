@@ -32,9 +32,9 @@ class DatabaseSeeder extends Seeder
 
         // Sample Barang - UBAH JADI 'nama'
         Barang::create([
-            'kode_barang' => 'LAP-001',
-            'nama' => 'Laptop ASUS ROG', // 'nama' SAJA
-            'deskripsi' => 'Laptop gaming untuk kegiatan multimedia',
+            'kode_barang' => 'P-001',
+            'nama' => 'Palu Presidium', // 'nama' SAJA
+            'deskripsi' => 'Palu untuk persidangan',
             'stok' => 5,
             'status' => 'tersedia'
         ]);
@@ -42,7 +42,7 @@ class DatabaseSeeder extends Seeder
         Barang::create([
             'kode_barang' => 'PRO-001',
             'nama' => 'Projector Epson', // 'nama' SAJA
-            'deskripsi' => 'Projector untuk presentasi dan pemutaran film',
+            'deskripsi' => 'Projector untuk presentasi',
             'stok' => 3,
             'status' => 'tersedia'
         ]);
@@ -56,7 +56,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         Barang::create([
-            'kode_barang' => 'LAB PC',
+            'kode_barang' => 'RUANG-LP',
             'nama' => 'Lab Pertanian Cerdas', // CONTOH BUKAN BARANG
             'deskripsi' => 'Laboratorium IoT untuk praktikum',
             'stok' => 1,

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Sistem Peminjaman Inventaris')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -87,7 +88,15 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        // Set CSRF token untuk semua AJAX request
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+
         // SweetAlert untuk notifikasi
         function showAlert(type, title, message) {
             Swal.fire({
@@ -98,28 +107,6 @@
                 showConfirmButton: false
             });
         }
-
-        // Session untuk keranjang peminjaman
-        document.addEventListener('DOMContentLoaded', function() {
-            let keranjang = JSON.parse(sessionStorage.getItem('keranjang_peminjaman')) || [];
-            
-            // Tombol tambah ke keranjang
-            const tambahKeranjangButtons = document.querySelectorAll('.tambah-keranjang');
-            tambahKeranjangButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const barangId = this.dataset.barangId;
-                    const barangNama = this.dataset.barangNama;
-                    
-                    keranjang.push({
-                        id: barangId,
-                        nama: barangNama
-                    });
-                    
-                    sessionStorage.setItem('keranjang_peminjaman', JSON.stringify(keranjang));
-                    showAlert('success', 'Berhasil', 'Barang ditambahkan ke keranjang');
-                });
-            });
-        });
     </script>
 </body>
 </html>
