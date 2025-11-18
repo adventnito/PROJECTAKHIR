@@ -127,9 +127,9 @@
                                                 <h6 class="mb-1">{{ $peminjaman->barang->nama ?? 'N/A' }}</h6>
                                                 <small class="text-muted">{{ $peminjaman->created_at->format('d/m/Y') }}</small>
                                             </div>
-                                            <span class="badge bg-{{ 
-                                                $peminjaman->status == 'disetujui' ? 'success' : 
-                                                ($peminjaman->status == 'pending' ? 'warning' : 'danger') 
+                                            <span class="badge bg-{{
+                                                $peminjaman->status == 'disetujui' ? 'success' :
+                                                ($peminjaman->status == 'pending' ? 'warning' : 'danger')
                                             }}">
                                                 {{ $peminjaman->status }}
                                             </span>
@@ -162,7 +162,7 @@
                                                     <h6 class="mb-1">{{ $barang->nama }}</h6>
                                                     <small class="text-muted">Kode: {{ $barang->kode_barang }} | Stok: {{ $barang->stok }}</small>
                                                 </div>
-                                                <a href="{{ route('mahasiswa.barang.index') }}?focus={{ $barang->id }}" 
+                                                <a href="{{ route('mahasiswa.barang.index') }}?focus={{ $barang->id }}"
                                                    class="btn btn-outline-success btn-sm">
                                                     Pinjam
                                                 </a>
@@ -197,7 +197,7 @@
                                                     <small>Kode: {{ $barang->kode_barang }}</small><br>
                                                     <small>Stok: {{ $barang->stok }}</small>
                                                 </p>
-                                                <a href="{{ route('mahasiswa.barang.index') }}?focus={{ $barang->id }}" 
+                                                <a href="{{ route('mahasiswa.barang.index') }}?focus={{ $barang->id }}"
                                                    class="btn btn-success btn-sm w-100">
                                                     Lihat Detail
                                                 </a>
@@ -256,7 +256,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
+
     @if(session('success'))
     <script>
         Swal.fire({
@@ -298,16 +298,16 @@
         // Simpan barang yang dilihat ke cookie
         function simpanKeRiwayat(barangId) {
             let riwayat = JSON.parse(getCookie('barang_terakhir_dilihat') || '[]');
-            
+
             // Hapus jika sudah ada
             riwayat = riwayat.filter(id => id != barangId);
-            
+
             // Tambahkan ke depan
             riwayat.unshift(barangId);
-            
+
             // Batasi maksimal 10 item
             riwayat = riwayat.slice(0, 10);
-            
+
             // Simpan ke cookie (30 hari)
             setCookie('barang_terakhir_dilihat', JSON.stringify(riwayat), 30);
         }

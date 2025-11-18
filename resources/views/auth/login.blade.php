@@ -21,17 +21,17 @@
                         <h4 class="mb-2">Sistem Peminjaman Inventaris</h4>
                         <p class="mb-0 opacity-75">Fakultas Ilmu Komputer - Universitas Jember</p>
                     </div>
-                    
+
                     <div class="card-body p-4">
                         <ul class="nav nav-pills nav-justified mb-4" id="pills-tab" role="tablist">
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="pills-login-tab" data-bs-toggle="pill" 
+                                <button class="nav-link active" id="pills-login-tab" data-bs-toggle="pill"
                                         data-bs-target="#pills-login" type="button" role="tab">
                                     <i class="fas fa-sign-in-alt me-2"></i>Login
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="pills-register-tab" data-bs-toggle="pill" 
+                                <button class="nav-link" id="pills-register-tab" data-bs-toggle="pill"
                                         data-bs-target="#pills-register" type="button" role="tab">
                                     <i class="fas fa-user-plus me-2"></i>Register
                                 </button>
@@ -43,7 +43,7 @@
                             <div class="tab-pane fade show active" id="pills-login" role="tabpanel">
                                 <form method="POST" action="{{ route('login.post') }}"> <!-- GUNAKAN ROUTE NAME -->
                                     @csrf <!-- PASTIKAN INI ADA -->
-                                    
+
                                     @if($errors->any() && $errors->has('email') && !$errors->has('name'))
                                         <div class="alert alert-warning alert-dismissible fade show">
                                             <i class="fas fa-exclamation-circle me-2"></i>
@@ -66,8 +66,8 @@
                                             <span class="input-group-text bg-dark text-white">
                                                 <i class="fas fa-envelope"></i>
                                             </span>
-                                            <input type="email" class="form-control @error('email') is-invalid @enderror" 
-                                                   id="login_email" name="email" value="{{ old('email') }}" required 
+                                            <input type="email" class="form-control @error('email') is-invalid @enderror"
+                                                   id="login_email" name="email" value="{{ old('email') }}" required
                                                    placeholder="email@example.com">
                                         </div>
                                         @error('email')
@@ -81,8 +81,8 @@
                                             <span class="input-group-text bg-dark text-white">
                                                 <i class="fas fa-lock"></i>
                                             </span>
-                                            <input type="password" class="form-control @error('password') is-invalid @enderror" 
-                                                   id="login_password" name="password" required 
+                                            <input type="password" class="form-control @error('password') is-invalid @enderror"
+                                                   id="login_password" name="password" required
                                                    placeholder="Masukkan password">
                                             <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('login_password')">
                                                 <i class="fas fa-eye"></i>
@@ -105,7 +105,7 @@
                             <div class="tab-pane fade" id="pills-register" role="tabpanel">
                                 <form method="POST" action="{{ route('register') }}" id="registerForm">
                                     @csrf <!-- PASTIKAN INI ADA -->
-                                    
+
                                     <!-- rest of register form -->
                                 </form>
                             </div>

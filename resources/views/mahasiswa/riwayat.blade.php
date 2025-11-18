@@ -2,6 +2,11 @@
 
 @section('content')
 <div class="container-fluid">
+    <!-- Tombol Back -->
+    <a href="{{ route('mahasiswa.dashboard') }}" class="btn btn-secondary mb-3">
+        <i class="fas fa-arrow-left me-2"></i>Kembali ke Dashboard
+    </a>
+
     <div class="row">
         <div class="col-md-12">
             <div class="card">
@@ -35,7 +40,7 @@
                                             @php
                                                 $statusClass = [
                                                     'pending' => 'warning',
-                                                    'disetujui' => 'success', 
+                                                    'disetujui' => 'success',
                                                     'ditolak' => 'danger',
                                                     'dikembalikan' => 'info'
                                                 ][$pinjam->status] ?? 'secondary';
