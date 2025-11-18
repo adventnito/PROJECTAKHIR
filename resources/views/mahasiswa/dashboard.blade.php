@@ -35,87 +35,68 @@
             <!-- Alert Session -->
             @if(session('success'))
                 <div class="alert alert-success alert-dismissible fade show">
-                    {{ session('success') }}
+                    <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif
 
             @if(session('error'))
                 <div class="alert alert-danger alert-dismissible fade show">
-                    {{ session('error') }}
+                    <i class="fas fa-exclamation-triangle me-2"></i>{{ session('error') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif
 
             <!-- Keranjang Peminjaman -->
             @if(count($cartItems) > 0)
-            <div class="card mb-4">
-                <div class="card-header bg-warning">
+            <div class="card mb-4 border-warning">
+                <div class="card-header bg-warning text-dark">
                     <h5 class="mb-0">
                         <i class="fas fa-shopping-cart"></i> Keranjang Peminjaman
                         <span class="badge bg-danger">{{ count($cartItems) }}</span>
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Gambar</th>
-                                    <th>Nama Barang</th>
-                                    <th>Kode</th>
-                                    <th>Status</th>
-                                    <th>Jumlah</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($cartItems as $id => $details)
-                                <tr>
-                                    <td>
-                                        @if($details['gambar'])
-                                            <img src="{{ asset('storage/' . $details['gambar']) }}" alt="{{ $details['nama'] }}" width="50" class="img-thumbnail">
-                                        @else
-                                            <div class="bg-light d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                                <i class="fas fa-box text-muted"></i>
-                                            </div>
-                                        @endif
-                                    </td>
-                                    <td>{{ $details['nama'] }}</td>
-                                    <td><code>{{ $details['kode_barang'] }}</code></td>
-                                    <td>
-                                        <span class="badge bg-{{ $details['status_badge'] ?? 'secondary' }}">
-                                            {{ $details['status_text'] ?? 'Unknown' }}
+                    <div class="row">
+                        @foreach($cartItems as $id => $item)
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ $item['nama'] }}</h6>
+                                    <p class="card-text">
+                                        <strong>Kode:</strong> {{ $item['kode_barang'] }}<br>
+                                        <strong>Jumlah:</strong> {{ $item['quantity'] }}<br>
+                                        <strong>Status:</strong> 
+                                        <span class="badge bg-{{ $item['status_badge'] }}">
+                                            {{ $item['status_text'] }}
                                         </span>
-                                    </td>
-                                    <td>
+                                    </p>
+                                    <div class="btn-group">
                                         <form action="{{ route('mahasiswa.cart.update', $id) }}" method="POST" class="d-inline">
                                             @csrf
                                             @method('PUT')
-                                            <div class="input-group input-group-sm" style="width: 120px;">
-                                                <input type="number" name="quantity" value="{{ $details['quantity'] }}" 
-                                                       min="1" max="{{ $details['max_stok'] }}" class="form-control">
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" name="quantity" value="{{ $item['quantity'] }}" 
+                                                       min="1" max="{{ $item['max_stok'] }}" class="form-control" style="width: 80px;">
                                                 <button type="submit" class="btn btn-outline-primary btn-sm">
                                                     <i class="fas fa-sync-alt"></i>
                                                 </button>
                                             </div>
                                         </form>
-                                    </td>
-                                    <td>
                                         <form action="{{ route('mahasiswa.cart.remove', $id) }}" method="POST" class="d-inline">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-danger btn-sm">
-                                                <i class="fas fa-trash"></i> Hapus
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                         </form>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
                     </div>
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex justify-content-between align-items-center mt-3">
                         <form action="{{ route('mahasiswa.cart.clear') }}" method="POST" class="d-inline">
                             @csrf
                             @method('DELETE')
@@ -131,74 +112,11 @@
             </div>
             @endif
 
-            <!-- Barang Terakhir Dilihat -->
-            @if(count($lastViewed) > 0)
-            <div class="card mb-4">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-history"></i> Barang Terakhir Dilihat
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        @foreach($lastViewed as $barangId)
-                            @php $barang = \App\Models\Barang::find($barangId); @endphp
-                            @if($barang)
-                            <div class="col-md-2 mb-3">
-                                <div class="card h-100">
-                                    @if($barang->gambar)
-                                    <img src="{{ asset('storage/' . $barang->gambar) }}" class="card-img-top" alt="{{ $barang->nama }}" style="height: 120px; object-fit: cover;">
-                                    @else
-                                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 120px;">
-                                        <i class="fas fa-box fa-2x text-muted"></i>
-                                    </div>
-                                    @endif
-                                    <div class="card-body">
-                                        <h6 class="card-title">{{ Str::limit($barang->nama, 20) }}</h6>
-                                        <p class="card-text small">
-                                            <strong>Kode:</strong> {{ $barang->kode_barang }}<br>
-                                            <strong>Stok:</strong> 
-                                            <span class="badge bg-success">{{ $barang->stok }}</span><br>
-                                            <strong>Status:</strong> 
-                                            <span class="badge bg-{{ $barang->status_badge }}">
-                                                {{ $barang->status_text }}
-                                            </span>
-                                        </p>
-                                    </div>
-                                    <div class="card-footer">
-                                        <a href="{{ route('mahasiswa.barang.show', $barang->id) }}" class="btn btn-info btn-sm w-100 mb-1">
-                                            <i class="fas fa-eye"></i> Detail
-                                        </a>
-                                        
-                                        <!-- TAMPILKAN TOMBOL PINJAM HANYA JIKA BARANG BISA DIPINJAM -->
-                                        @if($barang->status === 'tersedia' && $barang->stok > 0)
-                                        <form action="{{ route('mahasiswa.cart.add', $barang->id) }}" method="POST">
-                                            @csrf
-                                            <button type="submit" class="btn btn-primary btn-sm w-100">
-                                                <i class="fas fa-cart-plus"></i> Pinjam
-                                            </button>
-                                        </form>
-                                        @else
-                                        <button class="btn btn-secondary btn-sm w-100" disabled>
-                                            <i class="fas fa-ban"></i> 
-                                            {{ $barang->status === 'dipinjam' ? 'Sedang Dipinjam' : 'Tidak Tersedia' }}
-                                        </button>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                            @endif
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-            @endif
-
             <!-- Daftar Barang Tersedia -->
             <div class="card">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        <i class="fas fa-boxes"></i> Daftar Barang
+                        <i class="fas fa-boxes"></i> Daftar Barang Tersedia
                         <span class="badge bg-light text-dark">{{ $barang->count() }}</span>
                     </h5>
                 </div>
@@ -219,26 +137,23 @@
                                     <h5 class="card-title">{{ $item->nama }}</h5>
                                     <p class="card-text">
                                         <strong>Kode:</strong> <code>{{ $item->kode_barang }}</code><br>
-                                        <strong>Stok:</strong> 
-                                        <span class="badge bg-success">{{ $item->stok }}</span><br> <!-- PAKAI $item->stok BUKAN stok_tersedia -->
+                                        <strong>Stok Tersedia:</strong> 
+                                        <span class="badge bg-{{ $item->stok_tersedia > 0 ? 'success' : 'danger' }}">
+                                            {{ $item->stok_tersedia }}
+                                        </span><br>
                                         <strong>Status:</strong>
                                         <span class="badge bg-{{ $item->status_badge }}">
                                             {{ $item->status_text }}
-                                        </span><br>
-                                        @if($item->deskripsi)
-                                        <strong>Deskripsi:</strong> 
-                                        <small>{{ Str::limit($item->deskripsi, 50) }}</small>
-                                        @endif
+                                        </span>
                                     </p>
                                 </div>
                                 <div class="card-footer">
                                     <div class="btn-group w-100">
-                                        <a href="{{ route('mahasiswa.barang.show', $item->id) }}" class="btn btn-info btn-sm">
+                                        <button type="button" class="btn btn-info btn-sm" onclick="showBarangDetail({{ $item->id }})">
                                             <i class="fas fa-eye"></i> Detail
-                                        </a>
+                                        </button>
                                         
-                                        <!-- TAMPILKAN TOMBOL PINJAM HANYA JIKA BARANG BISA DIPINJAM -->
-                                        @if($item->status === 'tersedia' && $item->stok > 0)
+                                        @if($item->canBeBorrowed())
                                         <form action="{{ route('mahasiswa.cart.add', $item->id) }}" method="POST" class="d-inline">
                                             @csrf
                                             <button type="submit" class="btn btn-primary btn-sm">
@@ -247,8 +162,7 @@
                                         </form>
                                         @else
                                         <button class="btn btn-secondary btn-sm" disabled>
-                                            <i class="fas fa-ban"></i> 
-                                            {{ $item->status === 'dipinjam' ? 'Sedang Dipinjam' : 'Tidak Tersedia' }}
+                                            <i class="fas fa-ban"></i> Tidak Tersedia
                                         </button>
                                         @endif
                                     </div>
@@ -270,14 +184,60 @@
     </div>
 </div>
 
-<!-- Simple Alert -->
+<!-- Modal Detail Barang -->
+<div class="modal fade" id="barangDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detail Barang</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="barangDetailContent">
+                <!-- Content akan diisi via JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    @if(session('success'))
-        alert('{{ session('success') }}');
-    @endif
+function showBarangDetail(barangId) {
+    $('#barangDetailContent').html(`
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary"></div>
+            <p class="mt-2">Memuat detail barang...</p>
+        </div>
+    `);
     
-    @if(session('error'))
-        alert('{{ session('error') }}');
-    @endif
+    var modal = new bootstrap.Modal(document.getElementById('barangDetailModal'));
+    modal.show();
+    
+    fetch(`/mahasiswa/barang/${barangId}`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById('barangDetailContent').innerHTML = html;
+    })
+    .catch(error => {
+        document.getElementById('barangDetailContent').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i>
+                Gagal memuat detail barang.
+            </div>
+        `;
+    });
+}
+
+// Auto-hide alerts after 5 seconds
+setTimeout(() => {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        const bsAlert = new bootstrap.Alert(alert);
+        bsAlert.close();
+    });
+}, 5000);
 </script>
 @endsection

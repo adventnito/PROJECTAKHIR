@@ -1,86 +1,60 @@
-@extends('layouts.app')
-
-@section('content')
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">
-                        <i class="fas fa-box me-2"></i>Detail Barang
-                    </h4>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            @if($barang->gambar)
-                                <img src="{{ asset('storage/' . $barang->gambar) }}" 
-                                     alt="{{ $barang->nama }}" 
-                                     class="img-fluid rounded">
-                            @else
-                                <div class="bg-light d-flex align-items-center justify-content-center rounded" 
-                                     style="height: 200px;">
-                                    <i class="fas fa-box fa-3x text-muted"></i>
-                                </div>
-                            @endif
-                        </div>
-                        <div class="col-md-8">
-                            <h3>{{ $barang->nama }}</h3>
-                            <table class="table table-borderless">
-                                <tr>
-                                    <th width="30%">Kode Barang</th>
-                                    <td><code>{{ $barang->kode_barang }}</code></td>
-                                </tr>
-                                <tr>
-                                    <th>Stok Tersedia</th>
-                                    <td>
-                                        <span class="badge bg-success fs-6">
-                                            {{ $barang->stok_tersedia }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>Status</th>
-                                    <td>
-                                        <span class="badge bg-{{ $barang->status_badge }}">
-                                            {{ $barang->status_text }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                @if($barang->deskripsi)
-                                <tr>
-                                    <th>Deskripsi</th>
-                                    <td>{{ $barang->deskripsi }}</td>
-                                </tr>
-                                @endif
-                            </table>
-
-                            <div class="mt-4">
-                                @if($barang->canBeBorrowed())
-                                <form action="{{ route('mahasiswa.cart.add', $barang->id) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="btn btn-primary btn-lg">
-                                        <i class="fas fa-cart-plus me-2"></i>Tambah ke Keranjang Pinjam
-                                    </button>
-                                </form>
-                                @else
-                                <button class="btn btn-secondary btn-lg" disabled>
-                                    <i class="fas fa-ban me-2"></i>Barang Tidak Tersedia
-                                </button>
-                                @endif
-                                
-                                <a href="{{ route('mahasiswa.dashboard') }}" class="btn btn-outline-secondary ms-2">
-                                    <i class="fas fa-arrow-left me-2"></i>Kembali
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+<div class="row">
+    <div class="col-md-6">
+        @if($barang->gambar)
+            <img src="{{ asset('storage/' . $barang->gambar) }}" 
+                 alt="{{ $barang->nama }}" 
+                 class="img-fluid rounded"
+                 style="max-height: 300px; object-fit: cover;">
+        @else
+            <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                 style="height: 200px;">
+                <i class="fas fa-box fa-3x text-muted"></i>
             </div>
+        @endif
+    </div>
+    <div class="col-md-6">
+        <h4 class="text-primary">{{ $barang->nama }}</h4>
+        <table class="table table-borderless">
+            <tr>
+                <td width="40%"><strong>Kode Barang</strong></td>
+                <td><code class="fs-6">{{ $barang->kode_barang }}</code></td>
+            </tr>
+            <tr>
+                <td><strong>Stok Total</strong></td>
+                <td><span class="badge bg-secondary fs-6">{{ $barang->stok }}</span></td>
+            </tr>
+            <tr>
+                <td><strong>Stok Tersedia</strong></td>
+                <td><span class="badge bg-success fs-6">{{ $barang->stok_tersedia }}</span></td>
+            </tr>
+            <tr>
+                <td><strong>Status</strong></td>
+                <td>
+                    <span class="badge bg-{{ $barang->status_badge }} fs-6">
+                        {{ $barang->status_text }}
+                    </span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Deskripsi</strong></td>
+                <td>{{ $barang->deskripsi ?: '<em class="text-muted">Tidak ada deskripsi</em>' }}</td>
+            </tr>
+        </table>
+        
+        <div class="mt-4">
+            @if($barang->canBeBorrowed())
+                <form action="{{ route('mahasiswa.cart.add', $barang->id) }}" method="POST" class="d-inline">
+                    @csrf
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-cart-plus"></i> Tambah ke Keranjang
+                    </button>
+                </form>
+            @else
+                <button class="btn btn-secondary btn-lg" disabled>
+                    <i class="fas fa-ban"></i> 
+                    {{ $barang->status === 'perbaikan' ? 'Dalam Perbaikan' : 'Tidak Tersedia' }}
+                </button>
+            @endif
         </div>
     </div>
 </div>
-
-<!-- SweetAlert -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-@endsection

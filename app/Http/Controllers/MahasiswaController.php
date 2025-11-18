@@ -6,8 +6,6 @@ use App\Models\Barang;
 use App\Models\Peminjaman;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
 
 class MahasiswaController extends Controller
 {
@@ -19,56 +17,46 @@ class MahasiswaController extends Controller
 
     public function dashboard()
     {
-        // Cookies untuk barang terakhir dilihat
-        $lastViewed = json_decode(request()->cookie('last_viewed_barang', '[]'), true);
-        
-        // Session untuk keranjang peminjaman
+        $barang = Barang::where('status', '!=', 'perbaikan')
+            ->orderBy('nama')
+            ->get();
+
         $cartItems = session('cart_peminjaman', []);
-        
-        // Barang tersedia - PAKAI METHOD HELPER
-        $barang = Barang::tersedia()->get();
 
-        // DEBUG: Cek data barang
-        Log::info("=== DASHBOARD MAHASISWA DEBUG ===");
-        foreach($barang as $item) {
-            Log::info("Barang: " . $item->nama . " | Stok: " . $item->stok . " | Status: " . $item->status . " | Can Borrow: " . ($item->canBeBorrowed() ? 'YES' : 'NO'));
-        }
-
-        // Data mahasiswa
-        $user = Auth::user();
-        
-        return view('mahasiswa.dashboard', compact('barang', 'lastViewed', 'cartItems', 'user'));
+        return view('mahasiswa.dashboard', compact('barang', 'cartItems'));
     }
 
     public function showBarang($id)
     {
         $barang = Barang::findOrFail($id);
-        
-        // Update cookies untuk last viewed
-        $lastViewed = json_decode(request()->cookie('last_viewed_barang', '[]'), true);
-        array_unshift($lastViewed, $id);
-        $lastViewed = array_slice(array_unique($lastViewed), 0, 5);
-        
-        $response = response()->view('mahasiswa.barang-detail', compact('barang'));
-        return $response->cookie('last_viewed_barang', json_encode($lastViewed), 60*24*7)
-                       ->with('success', 'Detail barang berhasil dilihat');
+
+        if (request()->ajax()) {
+            return view('mahasiswa.barang-detail', compact('barang'));
+        }
+
+        return redirect()->route('mahasiswa.dashboard');
     }
 
     public function addToCart(Request $request, $id)
     {
         $barang = Barang::findOrFail($id);
         
-        // VALIDASI STOK FISIK, BUKAN stok_tersedia
+        // PERBAIKAN: Tampilkan stok tersedia di error message
         if (!$barang->canBeBorrowed()) {
-            return redirect()->back()->with('error', 'Barang tidak dapat dipinjam saat ini');
+            return redirect()->back()->with('error', 
+                'Barang tidak dapat dipinjam. Stok tersedia: ' . $barang->stok_tersedia
+            );
         }
-        
+
         $cart = session()->get('cart_peminjaman', []);
         
         if (isset($cart[$id])) {
-            // Cek apakah melebihi stok FISIK
-            if (($cart[$id]['quantity'] + 1) > $barang->stok) {
-                return redirect()->back()->with('error', 'Jumlah melebihi stok tersedia. Stok: ' . $barang->stok);
+            // PERBAIKAN: Validasi menggunakan stok_tersedia
+            $totalAkanDipinjam = $cart[$id]['quantity'] + 1;
+            if ($totalAkanDipinjam > $barang->stok_tersedia) {
+                return redirect()->back()->with('error', 
+                    'Jumlah melebihi stok tersedia. Stok tersedia: ' . $barang->stok_tersedia
+                );
             }
             $cart[$id]['quantity']++;
         } else {
@@ -77,7 +65,7 @@ class MahasiswaController extends Controller
                 "nama" => $barang->nama,
                 "kode_barang" => $barang->kode_barang,
                 "quantity" => 1,
-                "max_stok" => $barang->stok, // PAKAI stok FISIK
+                "max_stok" => $barang->stok_tersedia,
                 "gambar" => $barang->gambar,
                 "status_badge" => $barang->status_badge,
                 "status_text" => $barang->status_text
@@ -85,7 +73,9 @@ class MahasiswaController extends Controller
         }
         
         session()->put('cart_peminjaman', $cart);
-        return redirect()->back()->with('success', $barang->nama . ' ditambahkan ke keranjang peminjaman');
+        return redirect()->back()->with('success', 
+            $barang->nama . ' ditambahkan ke keranjang. Stok tersedia: ' . $barang->stok_tersedia
+        );
     }
 
     public function updateCart(Request $request, $id)
@@ -93,9 +83,11 @@ class MahasiswaController extends Controller
         $quantity = $request->input('quantity', 1);
         $barang = Barang::findOrFail($id);
         
-        // Gunakan stok FISIK
-        if ($quantity < 1 || $quantity > $barang->stok) {
-            return redirect()->back()->with('error', 'Jumlah tidak valid. Stok tersedia: ' . $barang->stok);
+        // PERBAIKAN: Validasi menggunakan stok_tersedia
+        if ($quantity < 1 || $quantity > $barang->stok_tersedia) {
+            return redirect()->back()->with('error', 
+                'Jumlah tidak valid. Stok tersedia: ' . $barang->stok_tersedia
+            );
         }
         
         $cart = session()->get('cart_peminjaman', []);
@@ -106,7 +98,7 @@ class MahasiswaController extends Controller
             return redirect()->back()->with('success', 'Jumlah berhasil diupdate');
         }
         
-        return redirect()->back();
+        return redirect()->back()->with('error', 'Item tidak ditemukan di keranjang');
     }
 
     public function removeFromCart($id)
@@ -120,7 +112,7 @@ class MahasiswaController extends Controller
             return redirect()->back()->with('success', $barangName . ' dihapus dari keranjang');
         }
         
-        return redirect()->back();
+        return redirect()->back()->with('error', 'Item tidak ditemukan di keranjang');
     }
 
     public function clearCart()
@@ -137,11 +129,13 @@ class MahasiswaController extends Controller
             return redirect()->route('mahasiswa.dashboard')->with('error', 'Keranjang peminjaman kosong');
         }
         
-        // Validasi stok untuk setiap item di cart - PAKAI STOK FISIK
+        // PERBAIKAN: Validasi stok tersedia
         foreach ($cartItems as $barangId => $item) {
             $barang = Barang::find($barangId);
-            if (!$barang || !$barang->canBeBorrowed() || $item['quantity'] > $barang->stok) {
-                return redirect()->route('mahasiswa.dashboard')->with('error', 'Stok ' . $item['nama'] . ' tidak mencukupi. Stok tersedia: ' . ($barang->stok ?? 0));
+            if (!$barang || !$barang->canBeBorrowed() || $item['quantity'] > $barang->stok_tersedia) {
+                return redirect()->route('mahasiswa.dashboard')->with('error', 
+                    'Stok ' . ($item['nama'] ?? 'barang') . ' tidak mencukupi. Stok tersedia: ' . ($barang->stok_tersedia ?? 0)
+                );
             }
         }
         
@@ -163,54 +157,36 @@ class MahasiswaController extends Controller
         }
         
         try {
-            // Validasi konflik tanggal dengan peminjaman lain
+            // PERBAIKAN: Validasi stok tersedia
             foreach ($cartItems as $barangId => $item) {
                 $barang = Barang::find($barangId);
                 
-                // VALIDASI STOK FISIK
-                if (!$barang || $item['quantity'] > $barang->stok) {
-                    return redirect()->back()->with('error', 'Stok ' . ($barang->nama ?? 'barang') . ' tidak mencukupi. Stok tersedia: ' . ($barang->stok ?? 0));
-                }
-                
-                // Cek apakah ada peminjaman aktif di tanggal yang sama
-                $konflikPeminjaman = Peminjaman::where('barang_id', $barangId)
-                    ->whereIn('status', ['disetujui', 'pending'])
-                    ->where(function($query) use ($request) {
-                        $query->whereBetween('tanggal_pinjam', [$request->tanggal_pinjam, $request->tanggal_kembali])
-                            ->orWhereBetween('tanggal_kembali', [$request->tanggal_pinjam, $request->tanggal_kembali])
-                            ->orWhere(function($q) use ($request) {
-                                $q->where('tanggal_pinjam', '<=', $request->tanggal_pinjam)
-                                    ->where('tanggal_kembali', '>=', $request->tanggal_kembali);
-                            });
-                    })
-                    ->exists();
-                    
-                if ($konflikPeminjaman) {
-                    return redirect()->back()->with('error', 'Barang ' . $item['nama'] . ' sudah dipinjam di tanggal yang dipilih. Silakan pilih tanggal lain.');
+                if (!$barang || !$barang->canBeBorrowed() || $item['quantity'] > $barang->stok_tersedia) {
+                    return redirect()->back()->with('error', 
+                        'Stok ' . ($barang->nama ?? 'barang') . ' tidak mencukupi. Stok tersedia: ' . ($barang->stok_tersedia ?? 0)
+                    );
                 }
             }
             
             // Create semua peminjaman
             foreach ($cartItems as $barangId => $item) {
-                $barang = Barang::find($barangId);
-                
-                if ($barang && $barang->canBeBorrowed() && $item['quantity'] <= $barang->stok) {
-                    Peminjaman::create([
-                        'user_id' => Auth::id(),
-                        'barang_id' => $barangId,
-                        'jumlah' => $item['quantity'],
-                        'tanggal_pinjam' => $request->tanggal_pinjam,
-                        'tanggal_kembali' => $request->tanggal_kembali,
-                        'alasan' => $request->alasan,
-                        'status' => 'pending'
-                    ]);
-                }
+                Peminjaman::create([
+                    'user_id' => Auth::id(),
+                    'barang_id' => $barangId,
+                    'jumlah' => $item['quantity'],
+                    'tanggal_pinjam' => $request->tanggal_pinjam,
+                    'tanggal_kembali' => $request->tanggal_kembali,
+                    'alasan' => $request->alasan,
+                    'status' => 'pending'
+                ]);
             }
             
             // Clear session
             session()->forget('cart_peminjaman');
             
-            return redirect()->route('mahasiswa.riwayat')->with('success', 'Pengajuan peminjaman berhasil dikirim. Menunggu persetujuan admin.');
+            return redirect()->route('mahasiswa.riwayat')->with('success', 
+                'Pengajuan peminjaman berhasil dikirim. Menunggu persetujuan admin.'
+            );
             
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
@@ -242,13 +218,17 @@ class MahasiswaController extends Controller
     {
         $keyword = $request->input('search');
         
-        // PAKAI METHOD HELPER UNTUK SEARCH
-        $barang = Barang::search($keyword)->tersedia()->get();
+        $barang = Barang::where('status', '!=', 'perbaikan')
+            ->where(function($query) use ($keyword) {
+                $query->where('nama', 'like', "%{$keyword}%")
+                    ->orWhere('kode_barang', 'like', "%{$keyword}%")
+                    ->orWhere('deskripsi', 'like', "%{$keyword}%");
+            })
+            ->orderBy('nama')
+            ->get();
         
         $cartItems = session('cart_peminjaman', []);
-        $lastViewed = json_decode(request()->cookie('last_viewed_barang', '[]'), true);
-        $user = Auth::user();
         
-        return view('mahasiswa.dashboard', compact('barang', 'lastViewed', 'cartItems', 'user'));
+        return view('mahasiswa.dashboard', compact('barang', 'cartItems'));
     }
 }

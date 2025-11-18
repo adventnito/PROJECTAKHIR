@@ -9,7 +9,6 @@ class Peminjaman extends Model
 {
     use HasFactory;
 
-    // TAMBAHKAN INI - Tentukan nama tabel yang benar
     protected $table = 'peminjamans';
 
     protected $fillable = [
@@ -34,10 +33,43 @@ class Peminjaman extends Model
         return $this->belongsTo(Barang::class);
     }
 
+    /**
+     * Check if borrowing is overdue
+     */
     public function isOverdue()
     {
         return $this->status === 'disetujui' && 
                now()->greaterThan($this->tanggal_kembali) && 
                !$this->tanggal_pengembalian;
+    }
+
+    /**
+     * Get status badge color
+     */
+    public function getStatusBadgeAttribute()
+    {
+        $statuses = [
+            'pending' => 'warning',
+            'disetujui' => 'success',
+            'ditolak' => 'danger',
+            'dikembalikan' => 'info'
+        ];
+
+        return $statuses[$this->status] ?? 'secondary';
+    }
+
+    /**
+     * Get status text
+     */
+    public function getStatusTextAttribute()
+    {
+        $statuses = [
+            'pending' => 'Menunggu',
+            'disetujui' => 'Disetujui',
+            'ditolak' => 'Ditolak',
+            'dikembalikan' => 'Dikembalikan'
+        ];
+
+        return $statuses[$this->status] ?? 'Tidak Diketahui';
     }
 }

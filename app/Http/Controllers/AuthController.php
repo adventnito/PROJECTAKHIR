@@ -29,20 +29,37 @@ class AuthController extends Controller
             'password' => 'required'
         ]);
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-            
-            $user = Auth::user();
-            if ($user->role === 'admin') {
-                return redirect()->route('admin.dashboard');
-            }
-            
-            return redirect()->route('mahasiswa.dashboard');
+        // Cek apakah email ada di database
+        $user = User::where('email', $credentials['email'])->first();
+
+        if (!$user) {
+            // Email tidak ditemukan, arahkan ke register
+            return back()
+                ->withErrors([
+                    'email' => 'Email tidak terdaftar. Silakan daftar terlebih dahulu.',
+                ])
+                ->withInput()
+                ->with('show_register', true);
         }
 
-        return back()->withErrors([
-            'email' => 'Email atau password salah.',
-        ]);
+        // Cek password
+        if (!Auth::attempt($credentials)) {
+            // Password salah, tetap di halaman login
+            return back()
+                ->withErrors([
+                    'password' => 'Password salah. Silakan coba lagi.',
+                ])
+                ->withInput();
+        }
+
+        $request->session()->regenerate();
+        
+        $user = Auth::user();
+        if ($user->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+        
+        return redirect()->route('mahasiswa.dashboard');
     }
 
     public function register(Request $request)
@@ -50,12 +67,12 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
-            'nim' => 'required|string|unique:users|size:9|regex:/^[0-9]+$/',
+            'nim' => 'required|string|unique:users|size:12|regex:/^[0-9]+$/',
             'phone' => 'required|string|min:10|max:15',
             'password' => 'required|min:6|confirmed',
         ], [
             'nim.unique' => 'NIM sudah terdaftar. Gunakan NIM yang berbeda.',
-            'nim.size' => 'NIM harus terdiri dari 9 digit.',
+            'nim.size' => 'NIM harus terdiri dari 12 digit.',
             'nim.regex' => 'NIM hanya boleh mengandung angka.',
             'email.unique' => 'Email sudah terdaftar.',
             'phone.min' => 'Nomor HP minimal 10 digit.',
