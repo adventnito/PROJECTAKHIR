@@ -24,12 +24,10 @@ class Barang extends Model
     }
 
     /**
-     * PERBAIKAN: Hitung stok tersedia yang benar
-     * Stok Tersedia = Stok Fisik - Total yang sedang dipinjam (disetujui)
+     * Hitung stok tersedia yang benar
      */
     public function getStokTersediaAttribute()
     {
-        // Jika status perbaikan, stok tersedia = 0
         if ($this->status === 'perbaikan') {
             return 0;
         }
@@ -42,17 +40,15 @@ class Barang extends Model
 
             $stokTersedia = $this->stok - $totalDipinjam;
 
-            // Pastikan tidak minus dan maksimal stok fisik
-            return max(0, min($stokTersedia, $this->stok));
+            return max(0, $stokTersedia);
 
         } catch (\Exception $e) {
-            // Fallback ke stok fisik jika error
             return $this->stok;
         }
     }
 
     /**
-     * PERBAIKAN: Cek apakah bisa dipinjam
+     * Cek apakah bisa dipinjam
      */
     public function getIsAvailableAttribute()
     {
@@ -60,7 +56,7 @@ class Barang extends Model
     }
 
     /**
-     * PERBAIKAN: Method untuk peminjaman
+     * Method untuk peminjaman
      */
     public function canBeBorrowed()
     {

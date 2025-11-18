@@ -65,24 +65,30 @@
                                     <h6 class="card-title">{{ $item['nama'] }}</h6>
                                     <p class="card-text">
                                         <strong>Kode:</strong> {{ $item['kode_barang'] }}<br>
-                                        <strong>Jumlah:</strong> {{ $item['quantity'] }}<br>
-                                        <strong>Status:</strong> 
+                                        <strong>Jumlah:</strong> 
+                                        <span id="quantity-{{ $id }}">{{ $item['quantity'] }}</span><br>
+                                        <strong>Status:</strong>
                                         <span class="badge bg-{{ $item['status_badge'] }}">
                                             {{ $item['status_text'] }}
                                         </span>
                                     </p>
                                     <div class="btn-group">
-                                        <form action="{{ route('mahasiswa.cart.update', $id) }}" method="POST" class="d-inline">
-                                            @csrf
-                                            @method('PUT')
-                                            <div class="input-group input-group-sm">
-                                                <input type="number" name="quantity" value="{{ $item['quantity'] }}" 
-                                                       min="1" max="{{ $item['max_stok'] }}" class="form-control" style="width: 80px;">
-                                                <button type="submit" class="btn btn-outline-primary btn-sm">
-                                                    <i class="fas fa-sync-alt"></i>
-                                                </button>
-                                            </div>
-                                        </form>
+                                        <div class="input-group input-group-sm">
+                                            <button class="btn btn-outline-secondary" type="button" 
+                                                    onclick="updateQuantity({{ $id }}, -1)">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <input type="number" id="input-{{ $id }}" 
+                                                   value="{{ $item['quantity'] }}" 
+                                                   min="1" max="{{ $item['max_stok'] }}" 
+                                                   class="form-control text-center" 
+                                                   onchange="updateQuantity({{ $id }}, 0, this.value)"
+                                                   style="width: 60px;">
+                                            <button class="btn btn-outline-secondary" type="button" 
+                                                    onclick="updateQuantity({{ $id }}, 1)">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
                                         <form action="{{ route('mahasiswa.cart.remove', $id) }}" method="POST" class="d-inline">
                                             @csrf
                                             @method('DELETE')
@@ -200,6 +206,91 @@
 </div>
 
 <script>
+// Function untuk update quantity dengan AJAX
+function updateQuantity(itemId, change, customValue = null) {
+    const input = document.getElementById('input-' + itemId);
+    const quantitySpan = document.getElementById('quantity-' + itemId);
+    
+    let newQuantity;
+    
+    if (customValue !== null) {
+        newQuantity = parseInt(customValue);
+    } else {
+        newQuantity = parseInt(input.value) + change;
+    }
+    
+    const maxStock = parseInt(input.max);
+    if (newQuantity < 1) newQuantity = 1;
+    if (newQuantity > maxStock) newQuantity = maxStock;
+    
+    input.value = newQuantity;
+    quantitySpan.textContent = newQuantity;
+    
+    fetch(`/mahasiswa/cart/update/${itemId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            quantity: newQuantity
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            showToast('success', data.message || 'Jumlah berhasil diupdate');
+            
+            if (data.max_stok) {
+                input.max = data.max_stok;
+            }
+        } else {
+            input.value = parseInt(input.value) - change;
+            quantitySpan.textContent = input.value;
+            showToast('error', data.message || 'Terjadi kesalahan');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        input.value = parseInt(input.value) - change;
+        quantitySpan.textContent = input.value;
+        showToast('error', 'Terjadi kesalahan saat mengupdate');
+    });
+}
+
+// Function untuk show toast notification
+function showToast(type, message) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} alert-dismissible fade show`;
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.top = '20px';
+    container.style.right = '20px';
+    container.style.zIndex = '9999';
+    container.style.minWidth = '300px';
+    container.appendChild(toast);
+    
+    document.body.appendChild(container);
+    
+    setTimeout(() => {
+        if (container.parentNode) {
+            container.parentNode.removeChild(container);
+        }
+    }, 3000);
+}
+
+// Modal detail barang
 function showBarangDetail(barangId) {
     $('#barangDetailContent').html(`
         <div class="text-center py-4">
@@ -239,5 +330,24 @@ setTimeout(() => {
         bsAlert.close();
     });
 }, 5000);
+
+// Handle input events untuk real-time update
+document.addEventListener('DOMContentLoaded', function() {
+    const quantityInputs = document.querySelectorAll('input[type="number"]');
+    quantityInputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            const itemId = this.id.replace('input-', '');
+            updateQuantity(itemId, 0, this.value);
+        });
+        
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const itemId = this.id.replace('input-', '');
+                updateQuantity(itemId, 0, this.value);
+                this.blur();
+            }
+        });
+    });
+});
 </script>
 @endsection
